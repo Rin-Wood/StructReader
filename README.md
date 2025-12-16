@@ -1,10 +1,17 @@
 # StructReader – Binary Structure Parsing Framework
 
 ## Installation
-Install the latest version of `StructReader` from PyPI:
+Install `StructReader` from PyPI:
 
 ```bash
 pip install StructReader
+```
+
+## Update
+Update an existing installation of `StructReader`:
+
+```bash
+pip install --upgrade StructReader
 ```
 
 ## 1. Overview
