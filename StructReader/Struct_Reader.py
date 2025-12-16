@@ -76,7 +76,7 @@ class _TypeFactory:
             self.Type = v
         elif tName.startswith(('Int', 'UInt')):
             self.Type = INT
-            self.Params = ['big' if tName.endswith('BE') else 'Little' if tName.endswith('LE') else None, tName.startswith('Int')]
+            self.Params = ['big' if tName.endswith('BE') else 'little' if tName.endswith('LE') else None, tName.startswith('Int')]
         elif tName.startswith('Float'):
             self.Type = FLOAT
             self.Params = ['>' if tName.endswith('BE') else '<' if tName.endswith('LE') else None]
@@ -121,8 +121,8 @@ def CompileType(v, order: str, order2: str, encoding: str, bytesToHex: bool):
             raise TypeError(v)
     elif isinstance(v, _TypeFactory):
         if (t := v.Type) == INT:
-            order, sign = v.Params
-            return (t, 4, sign, order or order)
+            o, sign = v.Params
+            return (t, 4, sign, o or order)
         elif (t := v.Type) == FLOAT:
             return (t, 4, 'f', v.Params[0] or order2)
         elif t == SEEK:
