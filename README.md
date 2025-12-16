@@ -348,7 +348,28 @@ class Entry:
 
 ---
 
-## 9. Custom Functions (Func)
+## 9. Conditional Parsing (While)
+
+```python
+While[cond, params, body]
+```
+
+Repeatedly parses body while the condition cond evaluates to True.
+
+Example:
+
+```python
+class Entry:
+    values = While[
+        lambda c: c < 128, # cond
+        [UInt[8]],         # params
+        [UInt[16]]         # body
+    ]
+```
+
+---
+
+## 10. Custom Functions (Func)
 
 ```python
 Func[callable, params...]
@@ -370,7 +391,7 @@ class Block:
 
 ---
 
-## 10. Group
+## 11. Group
 
 ```python
 Group[param1, param2, ...]
@@ -380,7 +401,7 @@ Used to group multiple parameters, mainly for function calls.
 
 ---
 
-## 11. Parsing API
+## 12. Parsing API
 
 ### ParseStruct
 
@@ -448,7 +469,7 @@ The input stream may be:
 
 ---
 
-## 12. Error Handling
+## 13. Error Handling
 
 * Parsing errors raise `RuntimeError`
 * The error contains the failing field definition
@@ -456,7 +477,7 @@ The input stream may be:
 
 ---
 
-## 13. Design Advantages
+## 14. Design Advantages
 
 * Explicit support for **binary format parsing**
 * Declarative structure definitions
@@ -469,7 +490,7 @@ The input stream may be:
 
 ---
 
-## 14. Default Value
+## 15. Default Value
 | Type        | Default                  |
 | ----------- | ------------------------ |
 | `Int`       | Int[32]                  |
@@ -487,7 +508,7 @@ The input stream may be:
 | `Until`     | Until[b'\x00']           |
 | `Align`     | Align[16]                |
 
-## 15. Minimal Complete Example
+## 16. Minimal Complete Example
 
 ```python
 from StructReader import ParseStruct
@@ -514,7 +535,7 @@ print(obj.a, obj.b)
 
 ---
 
-## 16. Summary
+## 17. Summary
 
 StructReader focuses on **binary format parsing** through a declarative, structure‑first approach.
 
