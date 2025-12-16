@@ -23,8 +23,9 @@ UNTIL   = 18
 LEN     = 19
 ALIGN   = 20
 SVARINT = 21
+WHILE   = 22
 
-TypeDict = {'Str':STR, 'Bytes':BYTES, 'List':LIST, 'Match':MATCH, 'Func':FUNC, 'Group':GROUP, 'Seek':SEEK, 'Peek':PEEK, 'Var':VAR, 'Until':UNTIL, 'Align':ALIGN}
+TypeDict = {'Str':STR, 'Bytes':BYTES, 'List':LIST, 'Match':MATCH, 'Func':FUNC, 'Group':GROUP, 'Seek':SEEK, 'Peek':PEEK, 'Var':VAR, 'Until':UNTIL, 'Align':ALIGN, 'While':WHILE}
 TypeDictGet = TypeDict.get
 
 class Struct:
@@ -56,13 +57,13 @@ class BaseType:
         elif typeIndex == FUNC:
             self.BFunc, params = value if isinstance(value[1], (list, tuple)) else (value[0], value[1:])
             self.Params = params if isinstance(params, BaseType) and params.Type == GROUP else BaseType(GROUP, params)
-        elif typeIndex == MATCH:
-            cond, params, self.Results = value
-            self.BFunc = BaseType(FUNC, (cond, params))
         elif typeIndex == SEEK:
             if not isinstance(value, tuple):
                 value = (value, 0)
             self.Offset, self.Mode = value[0], v if (v := value[1]) in (0, 1, 2) else 0
+        elif typeIndex in (MATCH, WHILE):
+            cond, params, self.Results = value
+            self.BFunc = BaseType(FUNC, (cond, params))
         elif typeIndex in (PEEK, UNTIL, ALIGN):
             if value is None and typeIndex in (UNTIL, ALIGN):
                 value = b'\x00' if typeIndex == UNTIL else 16
@@ -106,14 +107,14 @@ def CompileType(v, order: str, order2: str, encoding: str, bytesToHex: bool):
             return (t, [CompileType(i, order, order2, encoding, bytesToHex) for i in v.Params])
         elif t == FUNC:
             return (t, v.BFunc, CompileType(v.Params, order, order2, encoding, bytesToHex))
-        elif t == MATCH:
-            return (t, CompileType(v.BFunc, order, order2, encoding, bytesToHex), [CompileType(i, order, order2, encoding, bytesToHex) for i in v.Results])
         elif t == BYTES:
             return (BYTES2 if bytesToHex else BYTES, CompileType(v.Len, order, order2, encoding, bytesToHex))
         elif t == STR:
             return (t, CompileType(v.Len, order, order2, encoding, bytesToHex), v.Encoding or encoding)
         elif t == LIST:
             return (t, CompileType(v.Count, order, order2, encoding, bytesToHex), CompileType(v.Value, order, order2, encoding, bytesToHex))
+        elif t in (MATCH, WHILE):
+            return (t, CompileType(v.BFunc, order, order2, encoding, bytesToHex), [CompileType(i, order, order2, encoding, bytesToHex) for i in v.Results])
         elif t in (PEEK, UNTIL, ALIGN):
             return (t, CompileType(v.Value, order, order2, encoding, bytesToHex))
         elif t in (UVARINT, SVARINT, POS, BOOL, LEN):
@@ -152,8 +153,9 @@ class StructObj:
     __slots__ = ('FuncDict', 'Get', '_Ctx')
 
     def __init__(self):
-        self.FuncDict = {INT:self.ParseInt, FLOAT:self.ParseFloat, UVARINT:self.ParseUvarint, STR:self.ParseStr, BYTES:self.ParseBytes, BYTES2:self.ParseBytes2, LIST:self.ParseList, STRUCT:self.ParseStruct, CONST:self.ParseConst, VAR:self.ParseVar,
-                         MATCH:self.ParseMatch, GROUP:self.ParseGroup, FUNC:self.ParseFunc, SEEK:self.ParseSeek, PEEK:self.ParsePeek, POS:self.ParsePos, BOOL:self.ParseBool, LEN:self.ParseLen, UNTIL:self.ParseUntil, ALIGN:self.ParseAlign, SVARINT:self.ParseSvarint}
+        self.FuncDict = {INT:self.ParseInt, FLOAT:self.ParseFloat, UVARINT:self.ParseUvarint, STR:self.ParseStr, BYTES:self.ParseBytes, BYTES2:self.ParseBytes2, LIST:self.ParseList, STRUCT:self.ParseStruct,
+                         CONST:self.ParseConst, VAR:self.ParseVar, WHILE:self.ParseWhile, MATCH:self.ParseMatch, GROUP:self.ParseGroup, FUNC:self.ParseFunc, SEEK:self.ParseSeek, PEEK:self.ParsePeek, POS:self.ParsePos,
+                         BOOL:self.ParseBool, LEN:self.ParseLen, UNTIL:self.ParseUntil, ALIGN:self.ParseAlign, SVARINT:self.ParseSvarint}
         self.Get, self._Ctx = self.FuncDict.get, {}
 
     def Parse(self, struct: dict[str, Any], r: BufferedReader | bytes) -> object:
@@ -289,6 +291,18 @@ class StructObj:
         x = self.Get(v[0])(r, v)
         return (x - r.tell() % x) % x
 
+    def ParseWhile(self, r: BufferedReader, params: tuple[int, tuple, list]) -> list[Any]:
+        _, cond, cresults = params
+        func, results = (gf := self.Get)(cond[0]), []
+        if len(cresults) == 1:
+            x = gf((v := cresults[0])[0])
+            while func(r, cond):
+                results.append(x(r, v))
+        else:
+            while func(r, cond):
+                results.append([gf(i[0])(r, i) for i in cresults])
+        return results
+
 class StructDict(StructObj):
     def Parse(self, struct: dict[str, Any], r: BufferedReader | bytes) -> dict[str, Any]:
         ctx = self._Ctx
@@ -320,14 +334,15 @@ Seek          = _TypeFactory('Seek')
 Peek          = _TypeFactory('Peek')
 Func          = _TypeFactory('Func')
 Group         = _TypeFactory('Group')
-Uvarint       = BaseType(UVARINT)
 Var           = _TypeFactory('Var')
-Pos           = BaseType(POS)
-Bool          = BaseType(BOOL)
-Len           = BaseType(LEN)
 Until         = _TypeFactory('Until')
 Align         = _TypeFactory('Align')
+While         = _TypeFactory('While')
+Pos           = BaseType(POS)
+Len           = BaseType(LEN)
+Bool          = BaseType(BOOL)
 Svarint       = BaseType(SVARINT)
+Uvarint       = BaseType(UVARINT)
 StructObjCls  = StructObj()
 StructDictCls = StructDict()
 FuncObj       = StructObjCls.Parse
