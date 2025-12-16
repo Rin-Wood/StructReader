@@ -142,13 +142,69 @@ Uvarint
 Reads an unsigned variable-length integer using 7-bit continuation encoding.
 ---
 
-### 4.6 Bool
+### 4.6 Boolean
 
 ```python
 Bool
 ```
 
-Reads 1 byte and returns a boolean
+Reads 1 byte and returns `True` if non-zero.
+
+---
+
+### 4.7 Stream Length
+
+```python
+Len
+```
+
+Returns the total length of the input stream (in bytes).
+
+Example:
+
+```python
+class File:
+    size = Len
+```
+
+---
+
+### 4.8 Until (Terminated Read)
+
+```python
+Until[value]
+```
+
+Reads data until a terminator value is encountered.
+
+* The terminator is **not included** in the result
+* Stream position advances past the terminator
+
+Example:
+
+```python
+name = Str[Until[b'\x00']]
+data = Bytes[Until[b'\xFF\xFF']]
+```
+
+---
+
+### 4.9 Align (Alignment Helper)
+
+```python
+Align[n]
+```
+
+Returns the number of bytes needed to align the stream position to `n`.
+
+Usually combined with `Seek`.
+
+Example:
+
+```python
+pad = Align[16]
+Seek[Var.pad, 1]
+```
 
 ---
 
@@ -224,6 +280,7 @@ Returns the current read position in the stream.
 ```python
 Seek[offset, mode]
 ```
+If mode is omitted, it defaults to 0.
 
 | Mode | Meaning                      |
 | ---- | ---------------------------- |
@@ -234,7 +291,9 @@ Seek[offset, mode]
 Example:
 
 ```python
-Seek[128, 0]
+Seek[128]      # same as Seek[128, 0]
+Seek[128, 0]   # absolute position
+Seek[16, 1]    # relative to current position
 ```
 
 ---
@@ -258,10 +317,10 @@ next_type = Peek[UInt[8]]
 ## 8. Conditional Parsing (Match)
 
 ```python
-Match[condition, results]
+Match[cond, params, results]
 ```
 
-Selects one parsing branch based on the value of `condition`.
+Selects one parsing branch based on the value of `cond`.
 
 Example:
 
@@ -269,11 +328,12 @@ Example:
 class Entry:
     type = UInt[8]
     data = Match[
-        lambda t: 1 if t > 1 else 0
+        lambda t: 1 if t > 1 else 2 if t > 2 else 0
         [Var.type],
         [
-            UInt[32],  # type == 0
-            Str[8],    # type == 1
+            UInt[32],    # index 0
+            Str[8],      # index 1
+            Bytes[8],    # index 2
         ]
     ]
 ```
@@ -401,7 +461,25 @@ The input stream may be:
 
 ---
 
-## 14. Minimal Complete Example
+## 14. Default Value
+| Type        | Default                  |
+| ----------- | ------------------------ |
+| `Int`       | Int[32]                  |
+| `UInt`      | UInt[32]                 |
+| `IntLE`     | IntLE[32]                |
+| `IntBE`     | IntBE[32]                |
+| `UIntLE`    | UIntLE[32]               |
+| `UIntBE`    | UIntBE[32]               |
+| `Float`     | Float[32]                |
+| `FloatLE`   | FloatLE[32]              |
+| `FloatBE`   | FloatBE[32]              |
+| `Str`       | Str[UInt[8]]             |
+| `Bytes`     | Bytes[UInt[8]]           |
+| `Seek`      | Seek[0]                  |
+| `Until`     | Until[b'\x00']           |
+| `Align`     | Align[16]                |
+
+## 15. Minimal Complete Example
 
 ```python
 from StructReader import ParseStruct
@@ -428,7 +506,7 @@ print(obj.a, obj.b)
 
 ---
 
-## 15. Summary
+## 16. Summary
 
 StructReader focuses on **binary format parsing** through a declarative, structure‑first approach.
 
