@@ -5,7 +5,7 @@ setup(
     version="1.0.0",
     author='wood',
     author_email='miraclerinwood@gmail.com',
-    packages=["SpineAtlas"],
+    packages=["StructReader"],
     url='https://github.com/Rin-Wood/StructReader',
     description="use class to parse binary format",
     long_description=open('README.md', 'rb').read().decode('utf8'),
