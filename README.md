@@ -328,7 +328,7 @@ Example:
 class Entry:
     type = UInt[8]
     data = Match[
-        lambda t: 1 if t > 1 else 2 if t > 2 else 0
+        lambda t: 1 if t > 1 else 2 if t > 2 else 0,
         [Var.type],
         [
             UInt[32],    # index 0
