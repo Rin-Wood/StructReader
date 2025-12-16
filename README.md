@@ -137,9 +137,10 @@ payload = Bytes[16]
 
 ```python
 Uvarint
+Svarint
 ```
 
-Reads an unsigned variable-length integer using 7-bit continuation encoding.
+Reads an unsigned/signed variable-length integer using 7-bit continuation encoding.
 ---
 
 ### 4.6 Boolean
