@@ -22,6 +22,7 @@ BOOL    = 17
 UNTIL   = 18
 LEN     = 19
 ALIGN   = 20
+SVARINT = 21
 
 TypeDict = {'Str':STR, 'Bytes':BYTES, 'List':LIST, 'Match':MATCH, 'Func':FUNC, 'Group':GROUP, 'Seek':SEEK, 'Peek':PEEK, 'Var':VAR, 'Until':UNTIL, 'Align':ALIGN}
 TypeDictGet = TypeDict.get
@@ -115,7 +116,7 @@ def CompileType(v, order: str, order2: str, encoding: str, bytesToHex: bool):
             return (t, CompileType(v.Count, order, order2, encoding, bytesToHex), CompileType(v.Value, order, order2, encoding, bytesToHex))
         elif t in (PEEK, UNTIL, ALIGN):
             return (t, CompileType(v.Value, order, order2, encoding, bytesToHex))
-        elif t in (UVARINT, POS, BOOL, LEN):
+        elif t in (UVARINT, SVARINT, POS, BOOL, LEN):
             return (t,)
         else:
             raise TypeError(v)
@@ -152,7 +153,7 @@ class StructObj:
 
     def __init__(self):
         self.FuncDict = {INT:self.ParseInt, FLOAT:self.ParseFloat, UVARINT:self.ParseUvarint, STR:self.ParseStr, BYTES:self.ParseBytes, BYTES2:self.ParseBytes2, LIST:self.ParseList, STRUCT:self.ParseStruct, CONST:self.ParseConst, VAR:self.ParseVar,
-                         MATCH:self.ParseMatch, GROUP:self.ParseGroup, FUNC:self.ParseFunc, SEEK:self.ParseSeek, PEEK:self.ParsePeek, POS:self.ParsePos, BOOL:self.ParseBool, LEN:self.ParseLen, UNTIL:self.ParseUntil, ALIGN:self.ParseAlign}
+                         MATCH:self.ParseMatch, GROUP:self.ParseGroup, FUNC:self.ParseFunc, SEEK:self.ParseSeek, PEEK:self.ParsePeek, POS:self.ParsePos, BOOL:self.ParseBool, LEN:self.ParseLen, UNTIL:self.ParseUntil, ALIGN:self.ParseAlign, SVARINT:self.ParseSvarint}
         self.Get, self._Ctx = self.FuncDict.get, {}
 
     def Parse(self, struct: dict[str, Any], r: BufferedReader | bytes) -> object:
@@ -212,6 +213,14 @@ class StructObj:
             if not (byte & 0x80):
                 return value
             shift += 7
+
+    def ParseSvarint(self, r: BufferedReader, _) -> int:
+        u = self.ParseUvarint(r, None)
+        signBit = u & 1
+        u >>= 1
+        if signBit == 1:
+            return -(u + 1)
+        return u
 
     def ParseBool(self, r: BufferedReader, _) -> bool:
         b = r.read(1)
@@ -318,6 +327,7 @@ Bool          = BaseType(BOOL)
 Len           = BaseType(LEN)
 Until         = _TypeFactory('Until')
 Align         = _TypeFactory('Align')
+Svarint       = BaseType(SVARINT)
 StructObjCls  = StructObj()
 StructDictCls = StructDict()
 FuncObj       = StructObjCls.Parse
@@ -334,4 +344,4 @@ def ParseStruct(struct: object | dict[str, Any], r: BufferedReader | bytes, Retu
     cls._Ctx = {}
     return v
 
-__all__ = ['Int', 'UInt', 'IntBE', 'IntLE', 'UIntBE', 'UIntLE', 'Float', 'FloatBE', 'FloatLE', 'Str', 'List', 'Bytes', 'Uvarint', 'Var', 'Match', 'Pos', 'Seek', 'Peek', 'Func', 'Group', 'Bool', 'Len', 'Until', 'Align', 'CompileStruct', 'ParseStruct']
+__all__ = ['Int', 'UInt', 'IntBE', 'IntLE', 'UIntBE', 'UIntLE', 'Float', 'FloatBE', 'FloatLE', 'Str', 'List', 'Bytes', 'Uvarint', 'Var', 'Match', 'Pos', 'Seek', 'Peek', 'Func', 'Group', 'Bool', 'Len', 'Until', 'Align', 'Svarint', 'CompileStruct', 'ParseStruct']
