@@ -40,7 +40,7 @@ The framework:
 class Header:
     magic = UIntBE[32]
     size  = UInt[16]
-    data  = Bytes[size]
+    data  = Bytes[Var.size]
 ```
 
 Parsing:
@@ -112,7 +112,7 @@ Example:
 
 ```python
 name_len = UInt[8]
-name     = Str[name_len]
+name     = Str[Var.name_len]
 ```
 
 ---
@@ -140,6 +140,15 @@ Uvarint
 ```
 
 Reads an unsigned variable-length integer using 7-bit continuation encoding.
+---
+
+### 4.6 Bool
+
+```python
+Bool
+```
+
+Reads 1 byte and returns a boolean
 
 ---
 
@@ -260,11 +269,12 @@ Example:
 class Entry:
     type = UInt[8]
     data = Match[
-        type,
-        (
+        lambda t: 1 if t > 1 else 0
+        [Var.type],
+        [
             UInt[32],  # type == 0
             Str[8],    # type == 1
-        )
+        ]
     ]
 ```
 
@@ -287,7 +297,7 @@ def checksum(a, b):
 class Block:
     a = UInt[8]
     b = UInt[8]
-    c = Func[checksum, a, b]
+    c = Func[checksum, Var.a, Var.b]
 ```
 
 ---
