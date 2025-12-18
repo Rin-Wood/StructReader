@@ -230,7 +230,7 @@ Example:
 
 ```python
 count = UInt[16]
-items = List[count, UInt[32]]
+items = List[Var.count, UInt[32]]
 ```
 
 ---
