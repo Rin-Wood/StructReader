@@ -24,15 +24,16 @@ LEN     = 19
 ALIGN   = 20
 SVARINT = 21
 WHILE   = 22
+SELECT  = 23
 
-TypeDict = {'Str':STR, 'Bytes':BYTES, 'List':LIST, 'Match':MATCH, 'Func':FUNC, 'Group':GROUP, 'Seek':SEEK, 'Peek':PEEK, 'Var':VAR, 'Until':UNTIL, 'Align':ALIGN, 'While':WHILE}
+TypeDict = {'Str':STR, 'Bytes':BYTES, 'List':LIST, 'Match':MATCH, 'Func':FUNC, 'Group':GROUP, 'Seek':SEEK, 'Peek':PEEK, 'Var':VAR, 'Until':UNTIL, 'Align':ALIGN, 'While':WHILE, 'Select':SELECT}
 TypeDictGet = TypeDict.get
 
 class Struct:
     pass
 
 class BaseType:
-    __slots__ = ('Type', 'Name', 'Bits', 'Order', 'Sign', 'Len', 'Encoding', 'Count', 'Value', 'Params', 'BFunc', 'Results', 'Offset', 'Mode')
+    __slots__ = ('Type', 'Name', 'Bits', 'Order', 'Sign', 'Len', 'Encoding', 'Count', 'Value', 'Params', 'BFunc', 'Results', 'Offset', 'Mode', 'Index')
 
     def __init__(self, typeIndex, value = None):
         self.Type = typeIndex
@@ -61,6 +62,8 @@ class BaseType:
             if not isinstance(value, tuple):
                 value = (value, 0)
             self.Offset, self.Mode = value[0], v if (v := value[1]) in (0, 1, 2) else 0
+        elif typeIndex == SELECT:
+            self.BFunc, self.Results = value if isinstance(value[1], (list, tuple)) else (value[0], value[1:])
         elif typeIndex in (MATCH, WHILE):
             cond, params, self.Results = value
             self.BFunc = BaseType(FUNC, (cond, params))
@@ -113,7 +116,7 @@ def CompileType(v, order: str, order2: str, encoding: str, bytesToHex: bool):
             return (t, CompileType(v.Len, order, order2, encoding, bytesToHex), v.Encoding or encoding)
         elif t == LIST:
             return (t, CompileType(v.Count, order, order2, encoding, bytesToHex), CompileType(v.Value, order, order2, encoding, bytesToHex))
-        elif t in (MATCH, WHILE):
+        elif t in (MATCH, WHILE, SELECT):
             return (t, CompileType(v.BFunc, order, order2, encoding, bytesToHex), [CompileType(i, order, order2, encoding, bytesToHex) for i in v.Results])
         elif t in (PEEK, UNTIL, ALIGN):
             return (t, CompileType(v.Value, order, order2, encoding, bytesToHex))
@@ -155,7 +158,7 @@ class StructObj:
     def __init__(self):
         self.FuncDict = {INT:self.ParseInt, FLOAT:self.ParseFloat, UVARINT:self.ParseUvarint, STR:self.ParseStr, BYTES:self.ParseBytes, BYTES2:self.ParseBytes2, LIST:self.ParseList, STRUCT:self.ParseStruct,
                          CONST:self.ParseConst, VAR:self.ParseVar, WHILE:self.ParseWhile, MATCH:self.ParseMatch, GROUP:self.ParseGroup, FUNC:self.ParseFunc, SEEK:self.ParseSeek, PEEK:self.ParsePeek, POS:self.ParsePos,
-                         BOOL:self.ParseBool, LEN:self.ParseLen, UNTIL:self.ParseUntil, ALIGN:self.ParseAlign, SVARINT:self.ParseSvarint}
+                         BOOL:self.ParseBool, LEN:self.ParseLen, UNTIL:self.ParseUntil, ALIGN:self.ParseAlign, SVARINT:self.ParseSvarint, SELECT:self.ParseSelect}
         self.Get, self._Ctx = self.FuncDict.get, {}
 
     def Parse(self, struct: dict[str, Any], r: BufferedReader | bytes) -> object:
@@ -249,6 +252,11 @@ class StructObj:
         result = cresults[self.Get(cond[0])(r, cond)]
         return self.Get(result[0])(r, result)
 
+    def ParseSelect(self, r: BufferedReader, params: tuple[int, tuple, list]) -> Any:
+        _, index, results = params
+        result = results[self.Get(index[0])(r, index)]
+        return self.Get(result[0])(r, result)
+
     def ParseSeek(self, r: BufferedReader, params: tuple[int, tuple, int]) -> tuple[int, Literal[0, 1, 2]]:
         _, pos, mode = params
         r.seek((v := self.Get(pos[0])(r, pos)), mode)
@@ -338,6 +346,7 @@ Var           = _TypeFactory('Var')
 Until         = _TypeFactory('Until')
 Align         = _TypeFactory('Align')
 While         = _TypeFactory('While')
+Select        = _TypeFactory('Select')
 Pos           = BaseType(POS)
 Len           = BaseType(LEN)
 Bool          = BaseType(BOOL)
@@ -359,4 +368,4 @@ def ParseStruct(struct: object | dict[str, Any], r: BufferedReader | bytes, Retu
     cls._Ctx = {}
     return v
 
-__all__ = ['Int', 'UInt', 'IntBE', 'IntLE', 'UIntBE', 'UIntLE', 'Float', 'FloatBE', 'FloatLE', 'Str', 'List', 'Bytes', 'Uvarint', 'Var', 'Match', 'Pos', 'Seek', 'Peek', 'Func', 'Group', 'Bool', 'Len', 'Until', 'Align', 'Svarint', 'CompileStruct', 'ParseStruct']
+__all__ = ['Int', 'UInt', 'IntBE', 'IntLE', 'UIntBE', 'UIntLE', 'Float', 'FloatBE', 'FloatLE', 'Str', 'List', 'Bytes', 'Uvarint', 'Var', 'Match', 'Pos', 'Seek', 'Peek', 'Func', 'Group', 'Bool', 'Len', 'Until', 'Align', 'Svarint', 'While', 'Select', 'CompileStruct', 'ParseStruct']
