@@ -33,7 +33,7 @@ class Struct:
     pass
 
 class BaseType:
-    __slots__ = ('Type', 'Name', 'Bits', 'Order', 'Sign', 'Len', 'Encoding', 'Count', 'Value', 'Params', 'BFunc', 'Results', 'Offset', 'Mode', 'Index')
+    __slots__ = ('Type', 'Name', 'Bits', 'Order', 'Sign', 'Len', 'Encoding', 'Count', 'Value', 'Params', 'BFunc', 'Results', 'Offset', 'Mode')
 
     def __init__(self, typeIndex, value = None):
         self.Type = typeIndex
