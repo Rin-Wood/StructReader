@@ -369,7 +369,27 @@ class Entry:
 
 ---
 
-## 10. Custom Functions (Func)
+## 10. Select value (Select)
+
+```python
+Select[number, values]
+```
+
+Select from values ​​based on the passed value.
+
+Example:
+
+```python
+class Entry:
+    values = Select[
+        UInt[8],
+        [0, Uint[32], Uint[8]]
+    ]
+```
+
+---
+
+## 11. Custom Functions (Func)
 
 ```python
 Func[callable, params...]
@@ -391,7 +411,7 @@ class Block:
 
 ---
 
-## 11. Group
+## 12. Group
 
 ```python
 Group[param1, param2, ...]
@@ -401,7 +421,7 @@ Used to group multiple parameters, mainly for function calls.
 
 ---
 
-## 12. Parsing API
+## 13. Parsing API
 
 ### ParseStruct
 
@@ -469,7 +489,7 @@ The input stream may be:
 
 ---
 
-## 13. Error Handling
+## 14. Error Handling
 
 * Parsing errors raise `RuntimeError`
 * The error contains the failing field definition
@@ -477,7 +497,7 @@ The input stream may be:
 
 ---
 
-## 14. Design Advantages
+## 15. Design Advantages
 
 * Explicit support for **binary format parsing**
 * Declarative structure definitions
@@ -490,7 +510,7 @@ The input stream may be:
 
 ---
 
-## 15. Default Value
+## 16. Default Value
 | Type        | Default                  |
 | ----------- | ------------------------ |
 | `Int`       | Int[32]                  |
@@ -508,7 +528,7 @@ The input stream may be:
 | `Until`     | Until[b'\x00']           |
 | `Align`     | Align[16]                |
 
-## 16. Minimal Complete Example
+## 17. Minimal Complete Example
 
 ```python
 from StructReader import ParseStruct
@@ -535,7 +555,7 @@ print(obj.a, obj.b)
 
 ---
 
-## 17. Summary
+## 18. Summary
 
 StructReader focuses on **binary format parsing** through a declarative, structure‑first approach.
 
