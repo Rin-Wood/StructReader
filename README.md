@@ -110,6 +110,8 @@ y = FloatBE[64]
 ```python
 Str[length]
 Str[length, encoding]
+StrU[length]
+StrU[length, encoding]
 ```
 
 * `length` may be a constant or a previously defined field
@@ -120,6 +122,8 @@ Example:
 ```python
 name_len = UInt[8]
 name     = Str[Var.name_len]
+name2_len = UInt[8]
+name2     = StrU[Var.name_len2]
 ```
 
 ---
