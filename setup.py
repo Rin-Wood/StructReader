@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="StructReader",
-    version="1.0.32",
+    version="1.0.33",
     author='wood',
     author_email='miraclerinwood@gmail.com',
     packages=["StructReader"],
